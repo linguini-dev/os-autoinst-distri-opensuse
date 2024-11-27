@@ -143,7 +143,7 @@ sub load_latest_publiccloud_tests {
             }
             elsif (get_var('PUBLIC_CLOUD_CONTAINERS')) {
                 load_container_tests();
-            } elsif (get_var('PUBLIC_CLOUD_AZURE_AITL')){
+            } elsif (get_var('PUBLIC_CLOUD_AZURE_AITL')) {
                 loadtest "publiccloud/azure_aitl", run_args => $args;
             } elsif (get_var('PUBLIC_CLOUD_SMOKETEST')) {
                 loadtest "publiccloud/smoketest", run_args => $args;

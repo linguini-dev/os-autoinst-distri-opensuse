@@ -34,7 +34,7 @@ sub run {
     assert_script_run('az version');
 
     my $provider = $self->provider_factory();
-    
+
     my $image_url = get_required_var('PUBLIC_CLOUD_IMAGE_LOCATION');
     my $region = get_var('PUBLIC_CLOUD_REGION', 'westeurope');
     my $resource_group = "openqa-aitl-$job_id";
@@ -51,7 +51,7 @@ sub run {
     my $openqa_url = get_var('OPENQA_URL', get_var('OPENQA_HOSTNAME'));
     my $created_by = "$openqa_url/t$job_id";
     my $tags = "openqa-aitl=$job_id openqa_created_by=$created_by openqa_var_server=$openqa_url";
-    
+
     # Get the AITL script
     assert_script_run("curl https://raw.githubusercontent.com/microsoft/lisa/refs/tags/$aitl_client_version/microsoft/utils/aitl/aitl.py -o /tmp/aitl.py");
 
@@ -60,27 +60,27 @@ sub run {
     assert_script_run("az group create -n $resource_group --tags '$tags'");
 
     # Get manifest from data folder
-    assert_script_run ("curl " . data_url("publiccloud/aitl/$aitl_manifest") . " -o /tmp/$aitl_manifest");
-    assert_script_run ("sed -i -e 's/<IMAGE_NAME>/$aitl_image_name/g' -e 's/<IMAGE_VERSION>/$aitl_image_version/g' -e 's/<IMAGE_GALLERY_NAME>/$aitl_image_gallery/g' /tmp/$aitl_manifest");
+    assert_script_run("curl " . data_url("publiccloud/aitl/$aitl_manifest") . " -o /tmp/$aitl_manifest");
+    assert_script_run("sed -i -e 's/<IMAGE_NAME>/$aitl_image_name/g' -e 's/<IMAGE_VERSION>/$aitl_image_version/g' -e 's/<IMAGE_GALLERY_NAME>/$aitl_image_gallery/g' /tmp/$aitl_manifest");
 
     # Create AITL Job based on a manifest
-    script_output ("cat /tmp/$aitl_manifest");
-    assert_script_run ("python3.11 /tmp/aitl.py job create -s $subscription_id -r $resource_group -n $aitl_job_name -b @/tmp/$aitl_manifest");
+    script_output("cat /tmp/$aitl_manifest");
+    assert_script_run("python3.11 /tmp/aitl.py job create -s $subscription_id -r $resource_group -n $aitl_job_name -b @/tmp/$aitl_manifest");
 
     # Wait a few seconds to give Azure time to create the jobs
     sleep(10);
 
     # Get AITL job status
     # Need to save results to a variable
-    
-    my $results = script_output ("python3.11 /tmp/aitl.py job get -s $subscription_id -r $resource_group -n $aitl_job_name -q 'properties.results[]'");
+
+    my $results = script_output("python3.11 /tmp/aitl.py job get -s $subscription_id -r $resource_group -n $aitl_job_name -q 'properties.results[]'");
     record_info("results:", $results);
 
     # Remove the first two non-JSON lines from the results JSON.
     $results =~ s/^(?:.*\n){1,3}//;
     record_info("results_clean:", $results);
 
-    my $status = script_output ("python3.11 /tmp/aitl.py job get -s $subscription_id -r $resource_group -n $aitl_job_name -q 'properties.results[].status|{RUNNING:length([?@==\"RUNNING\"]),QUEUED:length([?@==\"QUEUED\"])}'");
+    my $status = script_output("python3.11 /tmp/aitl.py job get -s $subscription_id -r $resource_group -n $aitl_job_name -q 'properties.results[].status|{RUNNING:length([?@==\"RUNNING\"]),QUEUED:length([?@==\"QUEUED\"])}'");
 
     # Remove the first two non-JSON lines from the status JSON.
     $status =~ s/^(?:.*\n){1,3}//;
@@ -90,7 +90,7 @@ sub run {
     # The goal of the loop is to check there are no Jobs Queued or currently Running.
     while ($status_data->{RUNNING} ne 0 || $status_data->{QUEUED} ne 0) {
         sleep(30);
-        $status = script_output ("python3.11 /tmp/aitl.py job get -s $subscription_id -r $resource_group -n $aitl_job_name -q 'properties.results[].status|{RUNNING:length([?@==\"RUNNING\"]),QUEUED:length([?@==\"QUEUED\"])}'");
+        $status = script_output("python3.11 /tmp/aitl.py job get -s $subscription_id -r $resource_group -n $aitl_job_name -q 'properties.results[].status|{RUNNING:length([?@==\"RUNNING\"]),QUEUED:length([?@==\"QUEUED\"])}'");
         $status =~ s/^(?:.*\n){1,3}//;
         $status_data = decode_json($status);
         print("Unfinished AITL Jobs! Running:", $status_data->{RUNNING}, " QUEUED: ", $status_data->{QUEUED});
@@ -101,33 +101,33 @@ sub run {
 
     # Download file from host pool to the instance
     assert_script_run('curl -s ' . autoinst_url('/files/aitl_results.xml') . ' -o /tmp/aitl_results.xml');
-    parse_extra_log('XUnit','/tmp/aitl_results.xml');
+    parse_extra_log('XUnit', '/tmp/aitl_results.xml');
 
 }
 
 sub json_to_xml {
-  my ($json, $imageName) = @_;
-  my $data = decode_json($json);
+    my ($json, $imageName) = @_;
+    my $data = decode_json($json);
 
-  my $dom = XML::LibXML::Document->new('1.0','UTF-8');
-  my $testsuite = $dom->createElement('testsuite');
+    my $dom = XML::LibXML::Document->new('1.0', 'UTF-8');
+    my $testsuite = $dom->createElement('testsuite');
 
-  $testsuite->setAttribute('name', 'AITL');
-  $testsuite->setAttribute('image', $imageName);
+    $testsuite->setAttribute('name', 'AITL');
+    $testsuite->setAttribute('image', $imageName);
 
-  foreach my $test (@$data) {
-    my $testcase = $dom->createElement('testcase');
-    $testcase->setAttribute('name', $test->{testName});
-    $testcase->setAttribute('duration', $test->{duration});
-    $testcase->setAttribute('status', $test->{status});
-    $testcase->setAttribute('message', $test->{message});
-    
-    $testsuite->appendChild($testcase);
-  }
+    foreach my $test (@$data) {
+        my $testcase = $dom->createElement('testcase');
+        $testcase->setAttribute('name', $test->{testName});
+        $testcase->setAttribute('duration', $test->{duration});
+        $testcase->setAttribute('status', $test->{status});
+        $testcase->setAttribute('message', $test->{message});
 
-  $dom->setDocumentElement($testsuite);
-  $dom->toFile(hashed_string('aitl_results.xml'),1);
-  
+        $testsuite->appendChild($testcase);
+    }
+
+    $dom->setDocumentElement($testsuite);
+    $dom->toFile(hashed_string('aitl_results.xml'), 1);
+
 }
 
 1;
