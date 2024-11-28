@@ -28,7 +28,7 @@ sub run {
     my $provider = $self->provider_factory();
     my $image_def = $provider->generate_azure_image_definition();
     #my $image_definition = $provider->provider_client->generate_azure_image_definition();
-    record_info("GENERATEDNAME: ", $image_definition);
+    record_info("GENERATEDNAME: ", $image_def);
     my $image_url = get_required_var('PUBLIC_CLOUD_IMAGE_LOCATION');
     my $region = get_var('PUBLIC_CLOUD_REGION', 'westeurope');
     my $resource_group = "openqa-aitl-$job_id";
