@@ -76,7 +76,6 @@ sub run {
     my $status_data = decode_json($status);
 
     record_info("STATUS_RUNNING: ", $status_data->{RUNNING});
-    record_info("STATUS", $status_data->[@]);
     # AITL Jobs run in parallel so it's possible to have Jobs in all kind of states.
     # The goal of the loop is to check there are no Jobs Queued or currently Running.
     while ($status_data->{RUNNING} > 0 || $status_data->{QUEUED} > 0) {
