@@ -1,6 +1,6 @@
 # SUSE's openQA tests
 #
-# Copyright 2021-2024 SUSE LLC
+# Copyright 2024 SUSE LLC
 #
 # Copying and distribution of this file, with or without modification,
 # are permitted in any medium without royalty provided the copyright
@@ -14,9 +14,7 @@ use Mojo::Base 'publiccloud::basetest';
 use testapi;
 use serial_terminal 'select_serial_terminal';
 use mmapi 'get_current_job_id';
-use utils qw(zypper_call script_retry);
-use version_utils 'is_sle';
-use registration qw(add_suseconnect_product get_addon_fullname);
+use utils qw(zypper_call);
 use JSON;
 use XML::LibXML;
 
@@ -25,12 +23,7 @@ sub run {
     select_serial_terminal;
     my $job_id = get_current_job_id();
 
-    # If 'az' is preinstalled, we test that version
-    if (script_run("which az") != 0) {
-        add_suseconnect_product(get_addon_fullname('pcm'), (is_sle('=12-sp5') ? '12' : undef));
-        add_suseconnect_product(get_addon_fullname('phub')) if is_sle('=12-sp5');
-        zypper_call('in azure-cli jq python311 python3-susepubliccloudinfo ');
-    }
+    zypper_call('in python311');
     assert_script_run('az version');
 
     my $provider = $self->provider_factory();
@@ -64,7 +57,6 @@ sub run {
     assert_script_run("sed -i -e 's/<IMAGE_NAME>/$aitl_image_name/g' -e 's/<IMAGE_VERSION>/$aitl_image_version/g' -e 's/<IMAGE_GALLERY_NAME>/$aitl_image_gallery/g' /tmp/$aitl_manifest");
 
     # Create AITL Job based on a manifest
-    script_output("cat /tmp/$aitl_manifest");
     assert_script_run("python3.11 /tmp/aitl.py job create -s $subscription_id -r $resource_group -n $aitl_job_name -b @/tmp/$aitl_manifest");
 
     # Wait a few seconds to give Azure time to create the jobs
