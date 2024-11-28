@@ -16,7 +16,7 @@ use serial_terminal 'select_serial_terminal';
 use mmapi 'get_current_job_id';
 use utils qw(zypper_call);
 use JSON;
-use publiccloud::azure '(generate_azure_image_definition generate_basename)';
+use publiccloud::azure;
 use XML::LibXML;
 
 sub run {
