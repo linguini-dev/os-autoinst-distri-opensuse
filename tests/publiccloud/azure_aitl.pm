@@ -26,11 +26,8 @@ sub run {
     assert_script_run('az version');
 
     my $provider = $self->provider_factory();
-    my $image_def = $provider->generate_azure_image_definition();
-    #my $image_definition = $provider->provider_client->generate_azure_image_definition();
-    record_info("GENERATEDNAME: ", $image_def);
-    my $image_url = get_required_var('PUBLIC_CLOUD_IMAGE_LOCATION');
-    my $region = get_var('PUBLIC_CLOUD_REGION', 'westeurope');
+
+    my $region = get_var('PUBLIC_CLOUD_REGION', 'westus1');
     my $resource_group = "openqa-aitl-$job_id";
     my $subscription_id = $provider->provider_client->subscription;
 
@@ -39,9 +36,8 @@ sub run {
     my $aitl_image_version = "latest";
     my $aitl_job_name = "openqa-aitl-$job_id";
     my $aitl_manifest = "shared_gallery.json";
-    my ($aitl_image_name) = $image_url =~ /(?!.*\/)(?<image>.*)(?=\.\w+\.)/; # 1st group matches the URL up to the start of the name, 2nd group is the name, 3rd group is the file type. We drop groups 1 and 3.
+    my $aitl_image_name = $provider->generate_azure_image_definition();
 
-    my $openqa_ttl = get_var('MAX_JOB_TIME', 7200) + get_var('PUBLIC_CLOUD_TTL_OFFSET', 300);
     my $openqa_url = get_var('OPENQA_URL', get_var('OPENQA_HOSTNAME'));
     my $created_by = "$openqa_url/t$job_id";
     my $tags = "openqa-aitl=$job_id openqa_created_by=$created_by openqa_var_server=$openqa_url";
@@ -79,11 +75,11 @@ sub run {
     $status =~ s/^(?:.*\n){1,3}//;
     my $status_data = decode_json($status);
 
-    record_info("STATUS: ", $status_data);
-
+    record_info("STATUS_RUNNING: ", $status_data->{RUNNING});
+    record_info("STATUS", $status_data->[@]);
     # AITL Jobs run in parallel so it's possible to have Jobs in all kind of states.
     # The goal of the loop is to check there are no Jobs Queued or currently Running.
-    while ($status_data->{RUNNING} ne 0 || $status_data->{QUEUED} ne 0) {
+    while ($status_data->{RUNNING} > 0 || $status_data->{QUEUED} > 0) {
         sleep(30);
         $status = script_output("python3.11 /tmp/aitl.py job get -s $subscription_id -r $resource_group -n $aitl_job_name -q 'properties.results[].status|{RUNNING:length([?@==\"RUNNING\"]),QUEUED:length([?@==\"QUEUED\"])}'");
         $status =~ s/^(?:.*\n){1,3}//;
@@ -114,6 +110,7 @@ sub json_to_xml {
         my $testcase = $dom->createElement('testcase');
         $testcase->setAttribute('name', $test->{testName});
         $testcase->setAttribute('duration', $test->{duration});
+
         if ($test->{status} eq "FAILED") {
           $testcase->setAttribute('status', 'failure');
           my $failure = $dom->createElement('failure');
@@ -121,7 +118,6 @@ sub json_to_xml {
         } else {
           $testcase->setAttribute('status', $test->{status});
         }
-        $testcase->setAttribute('aitl_status', $test->{status});
 
         $testsuite->appendChild($testcase);
     }
