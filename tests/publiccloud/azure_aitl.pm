@@ -38,6 +38,8 @@ sub run {
     my $aitl_manifest = "shared_gallery.json";
     my $aitl_image_name = $provider->generate_azure_image_definition();
 
+    my $aitl_get_options = "-s $subscription_id -r $resource_group -n $aitl_job_name";
+
     my $openqa_url = get_var('OPENQA_URL', get_var('OPENQA_HOSTNAME'));
     my $created_by = "$openqa_url/t$job_id";
     my $tags = "openqa-aitl=$job_id openqa_created_by=$created_by openqa_var_server=$openqa_url";
@@ -69,7 +71,7 @@ sub run {
     $results =~ s/^(?:.*\n){1,3}//;
     record_info("results_clean:", $results);
 
-    my $status = script_output("python3.11 /tmp/aitl.py job get -s $subscription_id -r $resource_group -n $aitl_job_name -q 'properties.results[].status|{RUNNING:length([?@==\"RUNNING\"]),QUEUED:length([?@==\"QUEUED\"])}'");
+    my $status = script_output("python3.11 /tmp/aitl.py job get -s $subscription_id -r $resource_group -n $aitl_job_name -q \"properties.results[].status|{RUNNING:length([?@=='RUNNING']),QUEUED:length([?@=='QUEUED'])}\"");
 
     # Remove the first two non-JSON lines from the status JSON.
     $status =~ s/^(?:.*\n){1,3}//;
@@ -81,7 +83,7 @@ sub run {
     # The goal of the loop is to check there are no Jobs Queued or currently Running.
     while ($status_data->{RUNNING} > 0 || $status_data->{QUEUED} > 0) {
         sleep(30);
-        $status = script_output("python3.11 /tmp/aitl.py job get -s $subscription_id -r $resource_group -n $aitl_job_name -q 'properties.results[].status|{RUNNING:length([?@==\"RUNNING\"]),QUEUED:length([?@==\"QUEUED\"])}'");
+        $status = script_output("python3.11 /tmp/aitl.py job get $aitl_get_options -q \"properties.results[].status|{RUNNING:length([?@=='RUNNING']),QUEUED:length([?@=='QUEUED'])}\"");
         $status =~ s/^(?:.*\n){1,3}//;
         $status_data = decode_json($status);
         print("Unfinished AITL Jobs! Running:", $status_data->{RUNNING}, " QUEUED: ", $status_data->{QUEUED});
