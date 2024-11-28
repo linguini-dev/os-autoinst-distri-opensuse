@@ -24,7 +24,12 @@ sub run {
     select_serial_terminal;
     my $job_id = get_current_job_id();
 
-    zypper_call('in python311');
+    # If 'az' is preinstalled, we test that version
+    if (script_run("which az") != 0) {
+        add_suseconnect_product(get_addon_fullname('pcm'), (is_sle('=12-sp5') ? '12' : undef));
+        add_suseconnect_product(get_addon_fullname('phub')) if is_sle('=12-sp5');
+        zypper_call('in azure-cli jq python311 python3-susepubliccloudinfo ');
+    }
     assert_script_run('az version');
 
     my $provider = $self->provider_factory();
