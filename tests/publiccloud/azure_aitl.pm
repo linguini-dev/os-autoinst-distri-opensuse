@@ -16,6 +16,7 @@ use serial_terminal 'select_serial_terminal';
 use mmapi 'get_current_job_id';
 use utils qw(zypper_call);
 use JSON;
+use publiccloud::azure '(generate_azure_image_definition generate_basename)';
 use XML::LibXML;
 
 sub run {
@@ -28,6 +29,8 @@ sub run {
 
     my $provider = $self->provider_factory();
 
+    my $image_definition = $self-> generate_azure_image_definition();
+    record_info("GENERATEDNAME: ", $image_definition);
     my $image_url = get_required_var('PUBLIC_CLOUD_IMAGE_LOCATION');
     my $region = get_var('PUBLIC_CLOUD_REGION', 'westeurope');
     my $resource_group = "openqa-aitl-$job_id";
