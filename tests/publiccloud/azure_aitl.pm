@@ -56,7 +56,7 @@ sub run {
     assert_script_run("sed -i -e 's/<IMAGE_NAME>/$aitl_image_name/g' -e 's/<IMAGE_VERSION>/$aitl_image_version/g' -e 's/<IMAGE_GALLERY_NAME>/$aitl_image_gallery/g' /tmp/$aitl_manifest");
 
     # Create AITL Job based on a manifest
-    assert_script_run("python3.11 /tmp/aitl.py job create -s $subscription_id -r $resource_group -n $aitl_job_name -b @/tmp/$aitl_manifest");
+    assert_script_run("python3.11 /tmp/aitl.py job create $aitl_get_options -b @/tmp/$aitl_manifest");
 
     # Wait a few seconds to give Azure time to create the jobs
     sleep(10);
@@ -64,21 +64,19 @@ sub run {
     # Get AITL job status
     # Need to save results to a variable
 
-    my $results = script_output("python3.11 /tmp/aitl.py job get -s $subscription_id -r $resource_group -n $aitl_job_name -q 'properties.results[]'");
+    my $results = script_output("python3.11 /tmp/aitl.py job get $aitl_get_options -q 'properties.results[]'");
     record_info("results:", $results);
 
     # Remove the first two non-JSON lines from the results JSON.
     $results =~ s/^(?:.*\n){1,3}//;
     record_info("results_clean:", $results);
 
-    my $status = script_output("python3.11 /tmp/aitl.py job get -s $subscription_id -r $resource_group -n $aitl_job_name -q \"properties.results[].status|{RUNNING:length([?@=='RUNNING']),QUEUED:length([?@=='QUEUED'])}\"");
+    my $status = script_output("python3.11 /tmp/aitl.py job get $aitl_get_options -q \"properties.results[].status|{RUNNING:length([?@=='RUNNING']),QUEUED:length([?@=='QUEUED'])}\"");
 
     # Remove the first two non-JSON lines from the status JSON.
     $status =~ s/^(?:.*\n){1,3}//;
     my $status_data = decode_json($status);
 
-    record_info("STATUS_RUNNING: ", $status_data->{RUNNING});
-    record_info("STATUS_QUEUED: ", $status_data->{QUEUED});
     # AITL Jobs run in parallel so it's possible to have Jobs in all kind of states.
     # The goal of the loop is to check there are no Jobs Queued or currently Running.
     while ($status_data->{RUNNING} > 0 || $status_data->{QUEUED} > 0) {
@@ -114,10 +112,12 @@ sub json_to_xml {
         $testcase->setAttribute('duration', $test->{duration});
 
         if ($test->{status} eq "FAILED") {
-          $testcase->setAttribute('status', 'failure');
           my $failure = $dom->createElement('failure');
           $failure->setAttribute('message', $test->{message});
-        } else {
+        } elsif ($test->{status} eq "SKIPPED") {
+          my $skipped = $dom->createElement('skipped');
+          $skipped->setAttribute('message', $test->{message});
+          } else {
           $testcase->setAttribute('status', $test->{status});
         }
 
