@@ -16,7 +16,6 @@ use serial_terminal 'select_serial_terminal';
 use mmapi 'get_current_job_id';
 use utils qw(zypper_call);
 use JSON;
-use publiccloud::azure;
 use XML::LibXML;
 
 sub run {
@@ -24,17 +23,11 @@ sub run {
     select_serial_terminal;
     my $job_id = get_current_job_id();
 
-    # If 'az' is preinstalled, we test that version
-    if (script_run("which az") != 0) {
-        add_suseconnect_product(get_addon_fullname('pcm'), (is_sle('=12-sp5') ? '12' : undef));
-        add_suseconnect_product(get_addon_fullname('phub')) if is_sle('=12-sp5');
-        zypper_call('in azure-cli jq python311 python3-susepubliccloudinfo ');
-    }
     assert_script_run('az version');
 
     my $provider = $self->provider_factory();
-
-    my $image_definition = $self-> generate_azure_image_definition();
+    my $image_def = $provider->generate_azure_image_definition();
+    my $image_definition = $provider->provider_client->generate_azure_image_definition();
     record_info("GENERATEDNAME: ", $image_definition);
     my $image_url = get_required_var('PUBLIC_CLOUD_IMAGE_LOCATION');
     my $region = get_var('PUBLIC_CLOUD_REGION', 'westeurope');
@@ -121,8 +114,14 @@ sub json_to_xml {
         my $testcase = $dom->createElement('testcase');
         $testcase->setAttribute('name', $test->{testName});
         $testcase->setAttribute('duration', $test->{duration});
-        $testcase->setAttribute('status', $test->{status});
-        $testcase->setAttribute('message', $test->{message});
+        if ($test->{status} eq "FAILED") {
+          $testcase->setAttribute('status', 'failure');
+          my $failure = $dom->createElement('failure');
+          $failure->setAttribute('message', $test->{message});
+        } else {
+          $testcase->setAttribute('status', $test->{status});
+        }
+        $testcase->setAttribute('aitl_status', $test->{status});
 
         $testsuite->appendChild($testcase);
     }
