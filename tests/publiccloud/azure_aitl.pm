@@ -61,16 +61,6 @@ sub run {
     # Wait a few seconds to give Azure time to create the jobs
     sleep(10);
 
-    # Get AITL job status
-    # Need to save results to a variable
-
-    my $results = script_output("python3.11 /tmp/aitl.py job get $aitl_get_options -q 'properties.results[]'");
-    record_info("results:", $results);
-
-    # Remove the first two non-JSON lines from the results JSON.
-    $results =~ s/^(?:.*\n){1,3}//;
-    record_info("results_clean:", $results);
-
     my $status = script_output(qq(python3.11 /tmp/aitl.py job get $aitl_get_options -q "properties.results[].status|{RUNNING:length([?@=='RUNNING']),QUEUED:length([?@=='QUEUED'])}"));
 
     # Remove the first two non-JSON lines from the status JSON.
@@ -79,6 +69,7 @@ sub run {
     record_info("DEBUG RUNNING", $status_data->{RUNNING});
     record_info("DEBUG QUEUED", $status_data->{QUEUED});
 
+    # Get AITL job status
     # AITL Jobs run in parallel so it's possible to have Jobs in all kind of states.
     # The goal of the loop is to check there are no Jobs Queued or currently Running.
     while ($status_data->{RUNNING} > 0 || $status_data->{QUEUED} > 0) {
@@ -88,6 +79,12 @@ sub run {
         $status_data = decode_json($status);
         print("Unfinished AITL Jobs! Running:", $status_data->{RUNNING}, " QUEUED: ", $status_data->{QUEUED});
     }
+
+    # Need to save results to a variable
+    my $results = script_output("python3.11 /tmp/aitl.py job get $aitl_get_options -q 'properties.results[]'");
+
+    # Remove the first two non-JSON lines from the results JSON.
+    $results =~ s/^(?:.*\n){1,3}//;
 
     # Convert to JUnit XML and upload to host
     my $extra_log = json_to_xml($results, $aitl_image_name);
