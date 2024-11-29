@@ -72,12 +72,12 @@ sub run {
     record_info("results_clean:", $results);
 
     my $status = script_output("python3.11 /tmp/aitl.py job get $aitl_get_options -q 'properties.results[].status|{RUNNING:length([?@=='RUNNING']),QUEUED:length([?@=='QUEUED'])}'");
-    record_info("DEBUG RUNNING", $status->{RUNNING});
-    record_info("DEBUG QUEUED", $status->{QUEUED});
 
     # Remove the first two non-JSON lines from the status JSON.
     $status =~ s/^(?:.*\n){1,3}//;
     my $status_data = decode_json($status);
+    record_info("DEBUG RUNNING", $status_data->{RUNNING});
+    record_info("DEBUG QUEUED", $status_data->{QUEUED});
 
     # AITL Jobs run in parallel so it's possible to have Jobs in all kind of states.
     # The goal of the loop is to check there are no Jobs Queued or currently Running.
