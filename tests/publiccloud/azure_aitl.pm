@@ -107,7 +107,7 @@ sub json_to_xml {
         my $testcase = $dom->createElement('testcase');
         $testcase->setAttribute('name', $test->{testName});
         $testcase->setAttribute('duration', $test->{duration});
-
+        record_info("STATUS: ", test->{status});
         if ($test->{status} eq "FAILED") {
           my $failure = $dom->createElement('failure');
           $failure->setAttribute('message', $test->{message});
