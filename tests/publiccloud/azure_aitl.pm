@@ -71,8 +71,10 @@ sub run {
     $results =~ s/^(?:.*\n){1,3}//;
     record_info("results_clean:", $results);
 
-    my $status = script_output("python3.11 /tmp/aitl.py job get $aitl_get_options -q \"properties.results[].status|{RUNNING:length([?@=='RUNNING']),QUEUED:length([?@=='QUEUED'])}\"");
-
+    my $status = script_output("python3.11 /tmp/aitl.py job get $aitl_get_options -q properties.results[].status|{RUNNING:length([?@=='RUNNING']),QUEUED:length([?@=='QUEUED'])}");
+    record_info("DEBUG RUNNING", $status_data->{RUNNING});
+    record_info("DEBUG QUEUED", $status_data->{QUEUED});
+    
     # Remove the first two non-JSON lines from the status JSON.
     $status =~ s/^(?:.*\n){1,3}//;
     my $status_data = decode_json($status);
@@ -81,7 +83,7 @@ sub run {
     # The goal of the loop is to check there are no Jobs Queued or currently Running.
     while ($status_data->{RUNNING} > 0 || $status_data->{QUEUED} > 0) {
         sleep(30);
-        $status = script_output("python3.11 /tmp/aitl.py job get $aitl_get_options -q \"properties.results[].status|{RUNNING:length([?@=='RUNNING']),QUEUED:length([?@=='QUEUED'])}\"");
+        $status = script_output("python3.11 /tmp/aitl.py job get $aitl_get_options -q properties.results[].status|{RUNNING:length([?@=='RUNNING']),QUEUED:length([?@=='QUEUED'])}");
         $status =~ s/^(?:.*\n){1,3}//;
         $status_data = decode_json($status);
         print("Unfinished AITL Jobs! Running:", $status_data->{RUNNING}, " QUEUED: ", $status_data->{QUEUED});
