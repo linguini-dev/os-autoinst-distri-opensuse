@@ -66,8 +66,6 @@ sub run {
     # Remove the first two non-JSON lines from the status JSON.
     $status =~ s/^(?:.*\n){1,3}//;
     my $status_data = decode_json($status);
-    record_info("DEBUG RUNNING", $status_data->{RUNNING});
-    record_info("DEBUG QUEUED", $status_data->{QUEUED});
 
     # Get AITL job status
     # AITL Jobs run in parallel so it's possible to have Jobs in all kind of states.
