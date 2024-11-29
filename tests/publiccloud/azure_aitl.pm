@@ -27,7 +27,7 @@ sub run {
 
     my $provider = $self->provider_factory();
 
-    my $region = get_var('PUBLIC_CLOUD_REGION', 'westeurope');
+    my $region = get_var('PUBLIC_CLOUD_REGION');
     my $resource_group = "openqa-aitl-$job_id";
     my $subscription_id = $provider->provider_client->subscription;
 
@@ -90,6 +90,7 @@ sub run {
     # Download file from host pool to the instance
     assert_script_run('curl -s ' . autoinst_url('/files/aitl_results.xml') . ' -o /tmp/aitl_results.xml');
     parse_extra_log('XUnit', '/tmp/aitl_results.xml');
+    die "AITL test failed!" if ($status_data->{FAILED} > 0);
 
 }
 
