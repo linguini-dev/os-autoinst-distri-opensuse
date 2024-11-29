@@ -107,11 +107,19 @@ sub json_to_xml {
         my $testcase = $dom->createElement('testcase');
         $testcase->setAttribute('name', $test->{testName});
         $testcase->setAttribute('duration', $test->{duration});
-        record_info("STATUS: ", $test->{status});
-        if ($test->{status} eq "FAILED") {
+        # debug portion
+        print("STATUS: ", $test->{status});
+        if (chomp($test->{status}) eq 'FAILED') {
+          print("CHOMPED")
+        }
+        if ($test->{status} =~ /FAILED/){
+          print("REGEXD")
+        }
+        #
+        if ($test->{status} eq 'FAILED') {
           my $failure = $dom->createElement('failure');
           $failure->setAttribute('message', $test->{message});
-        } elsif ($test->{status} eq "SKIPPED") {
+        } elsif ($test->{status} eq 'SKIPPED') {
           my $skipped = $dom->createElement('skipped');
           $skipped->setAttribute('message', $test->{message});
           } else {
