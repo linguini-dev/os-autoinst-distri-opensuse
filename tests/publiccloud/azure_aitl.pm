@@ -61,21 +61,30 @@ sub run {
     # Wait a few seconds to give Azure time to create the jobs
     sleep(10);
 
-    my $status = script_output(qq(python3.11 /tmp/aitl.py job get $aitl_get_options -q "properties.results[].status|{RUNNING:length([?@=='RUNNING']),QUEUED:length([?@=='QUEUED']),ASSIGNED:length([?@=='ASSIGNED'])}"));
-
-    # Remove the first two non-JSON lines from the status JSON.
-    $status =~ s/^(?:.*\n){1,3}//;
-    my $status_data = decode_json($status);
-
     # Get AITL job status
     # AITL Jobs run in parallel so it's possible to have Jobs in all kind of states.
     # The goal of the loop is to check there are no Jobs Queued or currently Running.
-    while ($status_data->{RUNNING} > 0 || $status_data->{QUEUED} > 0 || $status_data->{ASSIGNED} > 0) {
-        sleep(30);
-        $status = script_output(qq(python3.11 /tmp/aitl.py job get $aitl_get_options -q "properties.results[].status|{RUNNING:length([?@=='RUNNING']),QUEUED:length([?@=='QUEUED']),ASSIGNED:length([?@=='ASSIGNED'])}"));
-        $status =~ s/^(?:.*\n){1,3}//;
-        $status_data = decode_json($status);
-        print("Unfinished AITL Jobs! Running:", $status_data->{RUNNING}, " QUEUED: ", $status_data->{QUEUED}, " ASSIGNED: ", $status_data->{ASSIGNED});
+    my $status_data;
+    while (1) {
+      # Get the current job status
+      my $status = script_output(qq(python3.11 /tmp/aitl.py job get $aitl_get_options -q "properties.results[].status|{RUNNING:length([?@=='RUNNING']),QUEUED:length([?@=='QUEUED']),ASSIGNED:length([?@=='ASSIGNED'])}"));
+  
+      # Remove the first two non-JSON lines from the status JSON
+      $status =~ s/^(?:.*\n){1,3}//;
+  
+      # Decode the status JSON
+      $status_data = decode_json($status);
+  
+      # Check if there are still jobs in RUNNING, QUEUED, or ASSIGNED state
+      if ($status_data->{RUNNING} == 0 && $status_data->{QUEUED} == 0 && $status_data->{ASSIGNED} == 0) {
+          last;  # Exit the loop if no jobs are in these states
+      }
+  
+      # Print the status
+      print("Unfinished AITL Jobs! Running:", $status_data->{RUNNING}, " QUEUED: ", $status_data->{QUEUED}, " ASSIGNED: ", $status_data->{ASSIGNED});
+  
+      # Wait before checking again
+      sleep(30);
     }
 
     # Need to save results to a variable
