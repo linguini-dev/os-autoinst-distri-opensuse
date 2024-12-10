@@ -324,7 +324,10 @@ sub load_slem_on_pc_tests {
             loadtest("publiccloud/ssh_interactive_end", run_args => $args);
             #loadtest("publiccloud/<saintytest>", run_args => $args);
             #loadtest("publiccloud/<rbac>", run_args => $args);
-        } elsif (is_container_test) {
+        } elsif (get_var('PUBLIC_CLOUD_AZURE_AITL')) {
+          loadtest "publiccloud/azure_aitl", run_args => $args;
+        }
+         elsif (is_container_test) {
             loadtest("publiccloud/ssh_interactive_start", run_args => $args);
             loadtest("publiccloud/instance_overview", run_args => $args);
             loadtest("publiccloud/slem_prepare", run_args => $args);
