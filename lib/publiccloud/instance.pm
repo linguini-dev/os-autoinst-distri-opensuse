@@ -656,7 +656,7 @@ sub check_cloudinit() {
         $self->ssh_assert_script_run('sudo grep snickerdoodle /root/test_cloud-init.txt');
 
         # Check for packages module
-        $self->ssh_assert_script_run('ed -V');
+        $self->ssh_assert_script_run('vim --version');
 
         # Check for final_message module
         $self->ssh_assert_script_run('sudo journalctl -b | grep "cloud-init qa has finished"');
