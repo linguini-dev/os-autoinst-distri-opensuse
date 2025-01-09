@@ -12,7 +12,7 @@ write_files:
   append: true
 
 packages:
-- ed
+- vim
 
 final_message: |
   cloud-init qa has finished
