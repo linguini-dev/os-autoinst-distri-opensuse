@@ -27,7 +27,7 @@ sub run {
 
     my $provider = $self->provider_factory();
 
-    my $region = "westeurope";    #get_var('PUBLIC_CLOUD_REGION');
+    my $region = "westeurope";
     my $resource_group = "openqa-aitl-$job_id";
     my $subscription_id = $provider->provider_client->subscription;
 
@@ -58,9 +58,20 @@ sub run {
     # Wildcards are supported, e.g. `nvme` will disable all tests with nvme.
     if (get_var('PUBLIC_CLOUD_AITL_EXCLUDE_TESTS')) {
         my @excluded_tests_list = split(',', get_var('PUBLIC_CLOUD_AITL_EXCLUDE_TESTS'));
-        foreach my $aitl_test (@excluded_tests_list) {
-            assert_script_run(qq(sed -i -e "/$aitl_test/d" /tmp/$aitl_manifest));
-        }
+        print "@excluded_tests_list\n";
+        my $excluded_selection = {
+          caseName => \@excluded_tests_list,
+          ignoreFailure => JSON::true
+        };
+        my $excluded_tests_json = encode_json($excluded_selection);
+        print "$excluded_tests_json";
+        $excluded_tests_json =~ s/(["\\])/\\$1/g;  # Escape quotes and backslashes
+        print "$excluded_tests_json";
+        #foreach my $aitl_test (@excluded_tests_list) {
+        #    assert_script_run(qq(sed -i -e "/$aitl_test/d" /tmp/$aitl_manifest));
+        #}
+        assert_script_run("sed -i '/\"selections\": \[/a \    $excluded_tests_json' $aitl_manifest");
+        assert_script_run("cat $aitl_manifest");
     }
 
     # Create AITL Job based on a manifest
