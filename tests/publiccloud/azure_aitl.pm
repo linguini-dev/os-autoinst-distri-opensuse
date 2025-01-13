@@ -58,19 +58,16 @@ sub run {
     # Wildcards are supported, e.g. `nvme` will disable all tests with nvme.
     if (get_var('PUBLIC_CLOUD_AITL_EXCLUDE_TESTS')) {
         my @excluded_tests_list = split(',', get_var('PUBLIC_CLOUD_AITL_EXCLUDE_TESTS'));
-        print "@excluded_tests_list\n";
+        print "EXCLUDED_TESTS_LIST: @excluded_tests_list\n";
         my $excluded_selection = {
           caseName => \@excluded_tests_list,
           ignoreFailure => JSON::true
         };
         my $excluded_tests_json = encode_json($excluded_selection);
-        print "$excluded_tests_json";
-        $excluded_tests_json =~ s/(["\\])/\\$1/g;  # Escape quotes and backslashes
-        print "$excluded_tests_json";
-        #foreach my $aitl_test (@excluded_tests_list) {
-        #    assert_script_run(qq(sed -i -e "/$aitl_test/d" /tmp/$aitl_manifest));
-        #}
-        assert_script_run("sed -i '/\"selections\": \[/a \    $excluded_tests_json' $aitl_manifest");
+        print "EXCLUDED_TESTS_JSON: $excluded_tests_json\n";
+        $excluded_tests_json =~ s/([\\&\$`"])/\\$1/g;  # Escape quotes and backslashes
+        print "EXCLUDED_TESTS_JSON_PARSED: $excluded_tests_json\n";
+        assert_script_run("sed -i '/\"selections\": \\[/a \    $excluded_tests_json' $aitl_manifest");
         assert_script_run("cat $aitl_manifest");
     }
 
