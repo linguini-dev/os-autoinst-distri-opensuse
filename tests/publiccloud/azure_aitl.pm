@@ -66,7 +66,7 @@ sub run {
         my $excluded_tests_json = encode_json($excluded_selection);
         print "EXCLUDED_TESTS_JSON: $excluded_tests_json\n";
         assert_script_run("sed -i '/\"selections\": \\[/a \    $excluded_tests_json,' /tmp/$aitl_manifest");
-        assert_script_run("cat $aitl_manifest");
+        assert_script_run("cat /tmp/$aitl_manifest");
     }
 
     # Create AITL Job based on a manifest
