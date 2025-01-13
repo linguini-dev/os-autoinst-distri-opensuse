@@ -65,9 +65,9 @@ sub run {
         };
         my $excluded_tests_json = encode_json($excluded_selection);
         print "EXCLUDED_TESTS_JSON: $excluded_tests_json\n";
-        $excluded_tests_json =~ s/([\\&\$`"])/\\$1/g;  # Escape quotes and backslashes
-        print "EXCLUDED_TESTS_JSON_PARSED: $excluded_tests_json\n";
-        assert_script_run("sed -i '/\"selections\": \\[/a \    $excluded_tests_json' $aitl_manifest");
+        #$excluded_tests_json =~ s/([\\&\$`"])/\\$1/g;  # Escape quotes and backslashes
+        #print "EXCLUDED_TESTS_JSON_PARSED: $excluded_tests_json\n";
+        assert_script_run("sed -i '/\"selections\": \[/a \    $excluded_tests_json' $aitl_manifest");
         assert_script_run("cat $aitl_manifest");
     }
 
