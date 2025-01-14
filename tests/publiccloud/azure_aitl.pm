@@ -106,7 +106,7 @@ sub run {
 
     # Remove the first two non-JSON lines from the results JSON.
     $results =~ s/^(?:.*\n){1,3}//;
-
+    print($results);
     # Convert to JUnit XML and upload to host
     my $extra_log = json_to_xml($results, $aitl_image_name);
 
