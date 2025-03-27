@@ -15,6 +15,10 @@ terraform {
   }
 }
 
+locals {
+  availability_zone = "${var.region}-b"
+}
+
 variable "cred_file" {
   default = "/root/google_credentials.json"
 }
@@ -23,7 +27,7 @@ provider "google" {
   credentials = var.cred_file
   project     = var.project
   region      = var.region #sets global default region for all resources
-  zone        = var.availability_zone #sets the global default zone for all zonal resources
+  zone        = local.availability_zone #sets the global default zone for all zonal resources
 }
 
 data "external" "gce_cred" {
@@ -41,10 +45,6 @@ variable "name" {
 
 variable "type" {
   default = "n1-standard-2"
-}
-
-variable "availability_zone" {
-  default = "europe-west1-b"
 }
 
 variable "region" {
@@ -214,5 +214,5 @@ output "region" {
 }
 
 output "availability_zone" {
-  value = var.availability_zone
+  value = local.availability_zone
 }
