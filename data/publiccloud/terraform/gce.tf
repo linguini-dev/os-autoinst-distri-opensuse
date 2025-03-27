@@ -23,6 +23,7 @@ provider "google" {
   credentials = var.cred_file
   project     = var.project
   region      = var.region #sets global default region for all resources
+  zone        = var.availability_zone #sets the global default zone for all zonal resources
 }
 
 data "external" "gce_cred" {
